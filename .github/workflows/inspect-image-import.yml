@@ -1,4 +1,4 @@
-name: Inspect TraceCat Image Import
+name: Export TraceCat Source for Repair
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  inspect:
+  export-source:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,99 +23,17 @@ jobs:
           rm -rf build-source
           mkdir -p build-source
           unzip -q TraceCat-Flutter-1.0-source.zip -d build-source
-          test -f build-source/tracecat_flutter/lib/main.dart
 
-      - name: Show image import code
-        working-directory: build-source/tracecat_flutter
+      - name: Prepare repair files
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
+          mkdir -p repair-files
+          cp build-source/tracecat_flutter/lib/main.dart repair-files/main.dart
+          cp build-source/tracecat_flutter/pubspec.yaml repair-files/pubspec.yaml
+          cp build-source/tracecat_flutter/android/app/src/main/AndroidManifest.xml repair-files/AndroidManifest.xml
 
-          terms = (
-              "ImagePicker",
-              "pickImage",
-              "ImageSource",
-              "XFile",
-              "Import Image",
-              "Take Photo",
-              "readAsBytes",
-              "File(",
-              "Navigator.pop",
-              "Navigator.push",
-              "imagePath",
-              "imageBytes",
-              "selectedImage",
-              "pickedImage",
-          )
-
-          for path in sorted(Path("lib").rglob("*.dart")):
-              lines = path.read_text(
-                  encoding="utf-8",
-                  errors="replace",
-              ).splitlines()
-
-              ranges = []
-
-              for index, line in enumerate(lines):
-                  if any(
-                      term.lower() in line.lower()
-                      for term in terms
-                  ):
-                      start = max(0, index - 20)
-                      end = min(len(lines), index + 31)
-                      ranges.append((start, end))
-
-              if not ranges:
-                  continue
-
-              ranges.sort()
-              merged = []
-
-              for start, end in ranges:
-                  if merged and start <= merged[-1][1]:
-                      merged[-1] = (
-                          merged[-1][0],
-                          max(merged[-1][1], end),
-                      )
-                  else:
-                      merged.append((start, end))
-
-              print()
-              print("=" * 80)
-              print(path)
-              print("=" * 80)
-
-              for start, end in merged:
-                  for number in range(start, end):
-                      print(
-                          f"{number + 1:5}: {lines[number]}"
-                      )
-                  print("-" * 80)
-
-          print()
-          print("=" * 80)
-          print("PUBSPEC")
-          print("=" * 80)
-          print(
-              Path("pubspec.yaml").read_text(
-                  encoding="utf-8",
-                  errors="replace",
-              )
-          )
-
-          manifest = Path(
-              "android/app/src/main/AndroidManifest.xml"
-          )
-
-          if manifest.exists():
-              print()
-              print("=" * 80)
-              print("ANDROID MANIFEST")
-              print("=" * 80)
-              print(
-                  manifest.read_text(
-                      encoding="utf-8",
-                      errors="replace",
-                  )
-              )
-          PY
+      - name: Upload repair files
+        uses: actions/upload-artifact@v4
+        with:
+          name: TraceCat-Repair-Files
+          path: repair-files
+          retention-days: 7
