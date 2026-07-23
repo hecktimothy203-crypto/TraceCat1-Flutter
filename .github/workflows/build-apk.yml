@@ -53,6 +53,10 @@ jobs:
           # Remove Flutter's default MyApp test because TraceCat uses a different app class.
           rm -f test/widget_test.dart
 
+                    # Upgrade Android tools required by the camera libraries.
+          find android -maxdepth 2 -type f \( -name 'settings.gradle' -o -name 'settings.gradle.kts' \) -exec sed -i 's/8\.7\.3/8.9.1/g; s/2\.1\.0/2.2.20/g' {} +
+          sed -i -E 's/gradle-[0-9.]+-(all|bin)\.zip/gradle-8.11.1-all.zip/' android/gradle/wrapper/gradle-wrapper.properties
+      
       - name: Repair invalid TraceView construction
         working-directory: build-source/tracecat_flutter
         shell: bash
