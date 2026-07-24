@@ -80,7 +80,7 @@ jobs:
             /tmp/tracecat-android-custom/app/src/main/res/. \
             android/app/src/main/res/
 
-          rm -f test/widget_test.dart
+          rm -rf test
 
           find android \
             -maxdepth 2 \
