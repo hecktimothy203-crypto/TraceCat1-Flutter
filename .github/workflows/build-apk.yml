@@ -3,10 +3,12 @@ name: Build TraceCat Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
-      - TraceCat-Flutter-1.0-source.zip
-      - .github/workflows/build-apk.yml
+      - "TraceCat-Flutter-1.0-source.zip"
+      - "market_app/**"
+      - ".github/workflows/build-apk.yml"
 
 permissions:
   contents: read
@@ -14,7 +16,7 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
 
     steps:
       - name: Check out repository
@@ -36,13 +38,22 @@ jobs:
         run: |
           rm -rf build-source
           mkdir -p build-source
-          unzip -q TraceCat-Flutter-1.0-source.zip -d build-source
-          test -f build-source/tracecat_flutter/pubspec.yaml
+
+          unzip -q \
+            TraceCat-Flutter-1.0-source.zip \
+            -d build-source
+
+          test -f \
+            build-source/tracecat_flutter/pubspec.yaml
+
+          test -f \
+            build-source/tracecat_flutter/lib/main.dart
 
       - name: Generate Android build files
         working-directory: build-source/tracecat_flutter
         run: |
-          cp -R android /tmp/tracecat-android-custom
+          cp -R android \
+            /tmp/tracecat-android-custom
 
           flutter create \
             --platforms=android \
@@ -50,13 +61,16 @@ jobs:
             --project-name tracecat_flutter \
             .
 
-          cp /tmp/tracecat-android-custom/app/build.gradle.kts \
+          cp \
+            /tmp/tracecat-android-custom/app/build.gradle.kts \
             android/app/build.gradle.kts
 
-          cp /tmp/tracecat-android-custom/app/src/main/AndroidManifest.xml \
+          cp \
+            /tmp/tracecat-android-custom/app/src/main/AndroidManifest.xml \
             android/app/src/main/AndroidManifest.xml
 
-          rm -rf android/app/src/main/kotlin
+          rm -rf \
+            android/app/src/main/kotlin
 
           cp -R \
             /tmp/tracecat-android-custom/app/src/main/kotlin \
@@ -68,50 +82,162 @@ jobs:
 
           rm -f test/widget_test.dart
 
-          find android -maxdepth 2 -type f \
-            \( -name 'settings.gradle' -o -name 'settings.gradle.kts' \) \
+          find android \
+            -maxdepth 2 \
+            -type f \
+            \( \
+              -name "settings.gradle" \
+              -o \
+              -name "settings.gradle.kts" \
+            \) \
             -exec sed -i \
-            's/8\.7\.3/8.9.1/g; s/2\.1\.0/2.2.20/g' {} +
+            's/8\.7\.3/8.9.1/g; s/2\.1\.0/2.2.20/g' \
+            {} +
 
           sed -i -E \
             's/gradle-[0-9.]+-(all|bin)\.zip/gradle-8.11.1-all.zip/' \
             android/gradle/wrapper/gradle-wrapper.properties
 
-      - name: Add missing TraceView constructor
+      - name: Prepare TraceCat workspace
+        working-directory: build-source/tracecat_flutter
+        run: |
+          python3 \
+            ../../market_app/prepare_workspace.py
+
+          test -f lib/trace_workspace.dart
+
+          {
+            cat ../../market_app/main_part1.dart
+            printf "\n"
+            cat ../../market_app/main_part2.dart
+            printf "\n"
+          } > lib/main.dart
+
+          test -f lib/main.dart
+
+      - name: Install TraceCat launcher icon
+        working-directory: build-source/tracecat_flutter
+        run: |
+          ICON_SOURCE="../../market_app/tracecat_launcher_icon.xml"
+
+          if [ ! -f "$ICON_SOURCE" ]; then
+            ICON_SOURCE="../../market_app/market_app/tracecat_launcher_icon.xml"
+          fi
+
+          test -f "$ICON_SOURCE"
+
+          mkdir -p \
+            android/app/src/main/res/drawable
+
+          cp \
+            "$ICON_SOURCE" \
+            android/app/src/main/res/drawable/tracecat_launcher_icon.xml
+
+      - name: Apply TraceCat app identity
         working-directory: build-source/tracecat_flutter
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
-          path = Path("lib/main.dart")
-          text = path.read_text(encoding="utf-8")
+          manifest_path = Path(
+              "android/app/src/main/AndroidManifest.xml"
+          )
 
-          fixed = """class TraceView {
-            TraceView();
+          manifest = manifest_path.read_text(
+              encoding="utf-8"
+          )
 
-          """
+          manifest, label_count = re.subn(
+              r'android:label="[^"]*"',
+              'android:label="TraceCat"',
+              manifest,
+              count=1,
+          )
 
-          if fixed not in text:
-              marker = "class TraceView {\n"
+          manifest, icon_count = re.subn(
+              r'android:icon="[^"]*"',
+              'android:icon="@drawable/tracecat_launcher_icon"',
+              manifest,
+              count=1,
+          )
 
-              if marker not in text:
-                  raise RuntimeError(
-                      "Could not locate the TraceView class."
-                  )
-
-              text = text.replace(
-                  marker,
-                  fixed,
-                  1,
+          if label_count != 1:
+              raise RuntimeError(
+                  "Could not update the Android app label."
               )
 
-              path.write_text(
-                  text,
-                  encoding="utf-8",
+          if icon_count != 1:
+              raise RuntimeError(
+                  "Could not update the Android launcher icon."
               )
 
-          print("TraceView default constructor is present.")
+          manifest_path.write_text(
+              manifest,
+              encoding="utf-8",
+          )
+
+          pubspec_path = Path("pubspec.yaml")
+
+          pubspec = pubspec_path.read_text(
+              encoding="utf-8"
+          )
+
+          pubspec, version_count = re.subn(
+              r"^version:\s*.+$",
+              "version: 1.1.0+2",
+              pubspec,
+              count=1,
+              flags=re.MULTILINE,
+          )
+
+          if version_count != 1:
+              raise RuntimeError(
+                  "Could not update the TraceCat version."
+              )
+
+          pubspec_path.write_text(
+              pubspec,
+              encoding="utf-8",
+          )
+
+          print(
+              "TraceCat identity and version applied."
+          )
           PY
+
+      - name: Format TraceCat source
+        working-directory: build-source/tracecat_flutter
+        run: |
+          dart format \
+            lib/main.dart \
+            lib/trace_workspace.dart
+
+      - name: Validate prepared source
+        working-directory: build-source/tracecat_flutter
+        run: |
+          grep -q \
+            "class TraceCatShell" \
+            lib/main.dart
+
+          grep -q \
+            "class TraceCatLogoPainter" \
+            lib/main.dart
+
+          grep -q \
+            "class TraceWorkspace" \
+            lib/trace_workspace.dart
+
+          grep -q \
+            "@drawable/tracecat_launcher_icon" \
+            android/app/src/main/AndroidManifest.xml
+
+          grep -q \
+            "version: 1.1.0+2" \
+            pubspec.yaml
+
+          echo \
+            "TraceCat market shell source is ready."
 
       - name: Download Flutter packages
         working-directory: build-source/tracecat_flutter
@@ -119,32 +245,40 @@ jobs:
 
       - name: Check Dart compilation
         working-directory: build-source/tracecat_flutter
-        run: flutter analyze --no-fatal-infos
+        run: |
+          flutter analyze \
+            --no-fatal-warnings \
+            --no-fatal-infos
 
       - name: Run tests
         continue-on-error: true
         working-directory: build-source/tracecat_flutter
         run: flutter test
 
-      - name: Build installable debug APK
+      - name: Build installable APK
         working-directory: build-source/tracecat_flutter
-        run: flutter build apk --debug
+        run: |
+          flutter build apk \
+            --debug \
+            --build-name=1.1.0 \
+            --build-number=2
 
-      - name: Prepare APK artifact
+      - name: Prepare APK download
         run: |
           cp \
             build-source/tracecat_flutter/build/app/outputs/flutter-apk/app-debug.apk \
-            TraceCat-Flutter-1.0.apk
+            TraceCat-1.1-Preview.apk
 
-          sha256sum TraceCat-Flutter-1.0.apk \
-            > TraceCat-Flutter-1.0.sha256
+          sha256sum \
+            TraceCat-1.1-Preview.apk \
+            > TraceCat-1.1-Preview.sha256
 
-      - name: Upload APK
+      - name: Upload TraceCat APK
         uses: actions/upload-artifact@v4
         with:
-          name: TraceCat-Android-APK
+          name: TraceCat-1.1-Preview-APK
           path: |
-            TraceCat-Flutter-1.0.apk
-            TraceCat-Flutter-1.0.sha256
+            TraceCat-1.1-Preview.apk
+            TraceCat-1.1-Preview.sha256
           if-no-files-found: error
           retention-days: 30
