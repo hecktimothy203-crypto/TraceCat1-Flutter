@@ -490,4 +490,313 @@ class _InfoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: _panelDecoration(),
+      child: ListTile(
+        leading: Icon(
+          icon,
+          color: TraceCatColors.orange,
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(
+            color: TraceCatColors.muted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AboutCard extends StatelessWidget {
+  const _AboutCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: _panelDecoration(),
+      child: const Column(
+        children: [
+          TraceCatLogo(size: 72),
+          SizedBox(height: 12),
+          TraceCatWordmark(fontSize: 25),
+          SizedBox(height: 7),
+          Text(
+            'A practical tracing camera for artists, with spatial surface tools planned for later releases.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: TraceCatColors.muted,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TraceCatWordmark extends StatelessWidget {
+  const TraceCatWordmark({
+    super.key,
+    required this.fontSize,
+  });
+
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      TextSpan(
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w900,
+          height: 1,
+          letterSpacing: -1,
+        ),
+        children: const [
+          TextSpan(
+            text: 'Trace',
+            style: TextStyle(
+              color: TraceCatColors.text,
+            ),
+          ),
+          TextSpan(
+            text: 'Cat',
+            style: TextStyle(
+              color: TraceCatColors.orange,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TraceCatLogo extends StatelessWidget {
+  const TraceCatLogo({
+    super.key,
+    required this.size,
+  });
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: size,
+      child: CustomPaint(
+        painter: TraceCatLogoPainter(),
+      ),
+    );
+  }
+}
+
+class TraceCatLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final unit = size.shortestSide / 100;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Offset.zero & size,
+        Radius.circular(22 * unit),
+      ),
+      Paint()
+        ..color = const Color(0xFF0E1115),
+    );
+
+    final orange = Paint()
+      ..color = TraceCatColors.orange
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4 * unit
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final corners = Path()
+      ..moveTo(12 * unit, 29 * unit)
+      ..lineTo(12 * unit, 13 * unit)
+      ..lineTo(28 * unit, 13 * unit)
+      ..moveTo(72 * unit, 13 * unit)
+      ..lineTo(88 * unit, 13 * unit)
+      ..lineTo(88 * unit, 29 * unit)
+      ..moveTo(12 * unit, 71 * unit)
+      ..lineTo(12 * unit, 87 * unit)
+      ..lineTo(28 * unit, 87 * unit)
+      ..moveTo(72 * unit, 87 * unit)
+      ..lineTo(88 * unit, 87 * unit)
+      ..lineTo(88 * unit, 71 * unit);
+
+    canvas.drawPath(corners, orange);
+
+    final face = Path()
+      ..moveTo(30 * unit, 40 * unit)
+      ..lineTo(26 * unit, 22 * unit)
+      ..lineTo(43 * unit, 32 * unit)
+      ..quadraticBezierTo(
+        50 * unit,
+        28 * unit,
+        50 * unit,
+        38 * unit,
+      )
+      ..lineTo(50 * unit, 74 * unit)
+      ..quadraticBezierTo(
+        38 * unit,
+        79 * unit,
+        30 * unit,
+        69 * unit,
+      )
+      ..quadraticBezierTo(
+        22 * unit,
+        55 * unit,
+        30 * unit,
+        40 * unit,
+      )
+      ..close();
+
+    canvas.drawPath(
+      face,
+      Paint()
+        ..color = const Color(0xFF343942),
+    );
+
+    final outline = Path()
+      ..moveTo(50 * unit, 38 * unit)
+      ..quadraticBezierTo(
+        59 * unit,
+        28 * unit,
+        67 * unit,
+        32 * unit,
+      )
+      ..lineTo(80 * unit, 22 * unit)
+      ..lineTo(76 * unit, 41 * unit)
+      ..quadraticBezierTo(
+        84 * unit,
+        54 * unit,
+        76 * unit,
+        68 * unit,
+      )
+      ..quadraticBezierTo(
+        67 * unit,
+        79 * unit,
+        50 * unit,
+        74 * unit,
+      );
+
+    canvas.drawPath(outline, orange);
+
+    canvas.drawLine(
+      Offset(50 * unit, 33 * unit),
+      Offset(50 * unit, 76 * unit),
+      orange,
+    );
+
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(
+          38 * unit,
+          52 * unit,
+        ),
+        width: 15 * unit,
+        height: 8 * unit,
+      ),
+      Paint()
+        ..color = TraceCatColors.orange,
+    );
+
+    canvas.drawCircle(
+      Offset(
+        38 * unit,
+        52 * unit,
+      ),
+      2 * unit,
+      Paint()
+        ..color = Colors.black,
+    );
+
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(
+          63 * unit,
+          52 * unit,
+        ),
+        width: 15 * unit,
+        height: 8 * unit,
+      ),
+      orange,
+    );
+
+    final pencil = Path()
+      ..moveTo(69 * unit, 72 * unit)
+      ..lineTo(87 * unit, 88 * unit)
+      ..lineTo(82 * unit, 93 * unit)
+      ..lineTo(64 * unit, 77 * unit)
+      ..close();
+
+    canvas.drawPath(
+      pencil,
+      Paint()
+        ..color = TraceCatColors.orange,
+    );
+
+    final pencilTip = Path()
+      ..moveTo(64 * unit, 77 * unit)
+      ..lineTo(60 * unit, 69 * unit)
+      ..lineTo(69 * unit, 72 * unit)
+      ..close();
+
+    canvas.drawPath(
+      pencilTip,
+      Paint()
+        ..color = const Color(0xFFE6C09A),
+    );
+  }
+
+  @override
+  bool shouldRepaint(
+    covariant TraceCatLogoPainter oldDelegate,
+  ) {
+    return false;
+  }
+}
+
+BoxDecoration _panelDecoration() {
+  return BoxDecoration(
+    color: TraceCatColors.surface,
+    borderRadius: BorderRadius.circular(17),
+    border: Border.all(
+      color: TraceCatColors.border,
+    ),
+  );
+}
+
+String _formatDate(int milliseconds) {
+  final date = DateTime
+      .fromMillisecondsSinceEpoch(milliseconds)
+      .toLocal();
+
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  return '${months[date.month - 1]} '
+      '${date.day}, ${date.year}';
+}
      
