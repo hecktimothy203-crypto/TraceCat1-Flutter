@@ -9,7 +9,7 @@ on:
       - "TraceCat-Flutter-1.0-source.zip"
       - "market_app/**"
       - ".github/workflows/build-apk.yml"
-
+      - ".github/workflows/market_app/**"
 permissions:
   contents: read
 
@@ -106,6 +106,11 @@ jobs:
 
           test -f lib/trace_workspace.dart
 
+          cp \
+            ../../.github/workflows/market_app/live_size_dialogs.dart \
+            lib/live_size_dialogs.dart
+
+          test -f lib/live_size_dialogs.dart
           {
             cat ../../market_app/main_part1.dart
             printf "\n"
