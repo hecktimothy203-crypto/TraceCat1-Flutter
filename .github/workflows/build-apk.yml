@@ -106,18 +106,17 @@ jobs:
 
           test -f lib/trace_workspace.dart
 
-          cp \
-            ../../.github/workflows/market_app/live_size_dialogs.dart \
-            lib/live_size_dialogs.dart
-
-          test -f lib/live_size_dialogs.dart
-
-                    python3 \
-            ../../.github/workflows/market_app/add_live_size.py
+                     python3 \
+            ../../.github/workflows/market_app/restore_line_match.py
 
           grep -q \
-            "class LiveSizeCalibrationPainter" \
+            "Future<void> _matchLines" \
             lib/trace_workspace.dart
+
+          grep -q \
+            "label: 'Match Lines'" \
+            lib/trace_workspace.dart
+            
           {
             cat ../../market_app/main_part1.dart
             printf "\n"
@@ -197,7 +196,7 @@ jobs:
 
           pubspec, version_count = re.subn(
               r"^version:\s*.+$",
-              "version: 1.2.0+3",
+              "version: 1.1.1+4",
               pubspec,
               count=1,
               flags=re.MULTILINE,
@@ -221,10 +220,9 @@ jobs:
       - name: Format TraceCat source
         working-directory: build-source/tracecat_flutter
         run: |
-          dart format \
+                    dart format \
             lib/main.dart \
-            lib/trace_workspace.dart \
-            lib/live_size_dialogs.dart
+            lib/trace_workspace.dart
             
       - name: Validate prepared source
         working-directory: build-source/tracecat_flutter
@@ -246,7 +244,7 @@ jobs:
             android/app/src/main/AndroidManifest.xml
 
           grep -q \
-            "version: 1.2.0+3" \
+            "version: 1.1.1+4" \
             pubspec.yaml
 
           echo \
@@ -273,25 +271,25 @@ jobs:
         run: |
           flutter build apk \
             --debug \
-            --build-name=1.2.0 \
-            --build-number=3
+            --build-name=1.1.1 \
+            --build-number=4
 
       - name: Prepare APK download
         run: |
           cp \
             build-source/tracecat_flutter/build/app/outputs/flutter-apk/app-debug.apk \
-            TraceCat-1.2-Live-Size.apk
+            TraceCat-1.1.1-Line-Match.apk
 
           sha256sum \
-           TraceCat-1.2-Live-Size.apk \
-            > TraceCat-1.2-Live-Size.sha256
+           TraceCat-1.1.1-Line-Match.apk \
+            > TraceCat-1.1.1-Line-Match.sha256
 
       - name: Upload TraceCat APK
         uses: actions/upload-artifact@v4
         with:
-          name: TraceCat-1.2-Live-Size-APK
+          name: TraceCat-1.1.1-Line-Match-APK
           path: |
-            TraceCat-1.2-Live-Size.apk
-            TraceCat-1.2-Live-Size.sha256
+            TraceCat-1.1.1-Line-Match.apk
+            TraceCat-1.1.1-Line-Match.sha256
           if-no-files-found: error
           retention-days: 30
