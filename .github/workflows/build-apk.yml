@@ -106,7 +106,7 @@ jobs:
 
           test -f lib/trace_workspace.dart
 
-                     python3 \
+          python3 \
             ../../.github/workflows/market_app/restore_line_match.py
 
           grep -q \
@@ -220,7 +220,7 @@ jobs:
       - name: Format TraceCat source
         working-directory: build-source/tracecat_flutter
         run: |
-                    dart format \
+          dart format \
             lib/main.dart \
             lib/trace_workspace.dart
             
